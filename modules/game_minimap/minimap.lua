@@ -1,19 +1,20 @@
 minimapWidget = nil
 minimapButton = nil
 minimapWindow = nil
-otmm = true
-preloaded = false
 fullmapView = false
+loaded = false
 oldZoom = nil
 oldPos = nil
 
 function init()
-  minimapButton = modules.client_topmenu.addRightGameToggleButton('minimapButton', 
-    tr('Minimap') .. ' (Ctrl+M)', '/images/topbuttons/minimap', toggle)
-  minimapButton:setOn(true)
-
   minimapWindow = g_ui.loadUI('minimap', modules.game_interface.getRightPanel())
   minimapWindow:setContentMinimumHeight(64)
+
+  if not minimapWindow.forceOpen then
+    minimapButton = modules.client_topmenu.addRightGameToggleButton('minimapButton', 
+      tr('Minimap') .. ' (Ctrl+M)', '/images/topbuttons/minimap', toggle)
+    minimapButton:setOn(true)
+  end
 
   minimapWidget = minimapWindow:recursiveGetChildById('minimap')
 
@@ -64,10 +65,13 @@ function terminate()
   g_keyboard.unbindKeyDown('Ctrl+Shift+M')
 
   minimapWindow:destroy()
-  minimapButton:destroy()
+  if minimapButton then
+    minimapButton:destroy()
+  end
 end
 
 function toggle()
+  if not minimapButton then return end
   if minimapButton:isOn() then
     minimapWindow:close()
     minimapButton:setOn(false)
@@ -78,16 +82,13 @@ function toggle()
 end
 
 function onMiniWindowClose()
-  minimapButton:setOn(false)
-end
-
-function preload()
-  loadMap(false)
-  preloaded = true
+  if minimapButton then
+    minimapButton:setOn(false)
+  end
 end
 
 function online()
-  loadMap(not preloaded)
+  loadMap()
   updateCameraPosition()
 end
 
@@ -95,36 +96,34 @@ function offline()
   saveMap()
 end
 
-function loadMap(clean)
+function loadMap()
   local clientVersion = g_game.getClientVersion()
 
-  if clean then
-    g_minimap.clean()
-  end
+  g_minimap.clean()
+  loaded = false
 
-  if otmm then
-    local minimapFile = '/minimap_'.. G.host ..'.otmm'
-    if g_resources.fileExists(minimapFile) then
-      g_minimap.loadOtmm(minimapFile)
-    end
-  else
-    local minimapFile = '/minimap_' .. clientVersion .. '_'.. G.host ..'.otcm'
-    if g_resources.fileExists(minimapFile) then
-      g_map.loadOtcm(minimapFile)
-    end
+  local minimapFile = '/minimap.otmm'
+  local dataMinimapFile = '/data' .. minimapFile
+  local versionedMinimapFile = '/minimap' .. clientVersion .. '.otmm'
+  if g_resources.fileExists(dataMinimapFile) then
+    loaded = g_minimap.loadOtmm(dataMinimapFile)
+  end
+  if not loaded and g_resources.fileExists(versionedMinimapFile) then
+    loaded = g_minimap.loadOtmm(versionedMinimapFile)
+  end
+  if not loaded and g_resources.fileExists(minimapFile) then
+    loaded = g_minimap.loadOtmm(minimapFile)
+  end
+  if not loaded then
+    print("Minimap couldn't be loaded, file missing?")
   end
   minimapWidget:load()
 end
 
 function saveMap()
   local clientVersion = g_game.getClientVersion()
-  if otmm then
-    local minimapFile = '/minimap_'.. G.host ..'.otmm'
-    g_minimap.saveOtmm(minimapFile)
-  else
-    local minimapFile = '/minimap_' .. clientVersion .. '_'.. G.host ..'.otcm'
-    g_map.saveOtcm(minimapFile)
-  end
+  local minimapFile = '/minimap' .. clientVersion .. '.otmm' 
+  g_minimap.saveOtmm(minimapFile)
   minimapWidget:save()
 end
 

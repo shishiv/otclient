@@ -36,6 +36,11 @@ MouseNoButton = 0
 MouseLeftButton = 1
 MouseRightButton = 2
 MouseMidButton = 3
+MouseTouch = 4
+MouseTouch2 = 5 -- multitouch, 2nd finger
+MouseTouch3 = 6 -- multitouch, 3th finger
+MouseButton4 = 7 -- side mouse button 1
+MouseButton5 = 8 -- side mouse button 2
 
 MouseNoWheel = 0
 MouseWheelUp = 1
@@ -318,4 +323,5 @@ SoundChannels = {
   Music = 1,
   Ambient = 2,
   Effect = 3,
+  Bot = 4
 }

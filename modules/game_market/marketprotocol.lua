@@ -39,15 +39,33 @@ end
 
 -- parsing protocols
 local function parseMarketEnter(protocol, msg)
-  local balance
-  if g_game.getClientVersion() >= 981 then
-    balance = msg:getU64()
-  else
-    balance = msg:getU32()
+  local items
+  if g_game.getClientVersion() < 944 then
+    items = {}
+    local itemsCount = msg:getU16()
+    for i = 1, itemsCount do
+      local itemId = msg:getU16()
+      local category = msg:getU8()
+      local name = msg:getString()
+      table.insert(items, {
+        id = itemId,
+        category = category,
+        name = name
+      })
+    end    
   end
-
+  
+  local balance = 0
+  if g_game.getProtocolVersion() <= 1250 or not g_game.getFeature(GameTibia12Protocol) then
+    if g_game.getProtocolVersion() >= 981 or g_game.getProtocolVersion() < 944 then
+      balance = msg:getU64()
+    else
+      balance = msg:getU32()
+    end
+  end
+  
   local vocation = -1
-  if g_game.getClientVersion() < 950 then
+  if g_game.getProtocolVersion() >= 944 and g_game.getProtocolVersion() < 950 then
     vocation = msg:getU8() -- get vocation id
   end
   local offers = msg:getU8()
@@ -61,7 +79,7 @@ local function parseMarketEnter(protocol, msg)
     depotItems[itemId] = itemCount
   end
 
-  signalcall(Market.onMarketEnter, depotItems, offers, balance, vocation)
+  signalcall(Market.onMarketEnter, depotItems, offers, balance, vocation, items)
   return true
 end
 
@@ -81,6 +99,15 @@ local function parseMarketDetail(protocol, msg)
       msg:getU16()
     end
   end
+
+  if g_game.getProtocolVersion() >= 1100 then -- imbuements
+    if msg:peekU16() ~= 0x00 then
+      table.insert(descriptions, {MarketItemDescription.Last + 1, msg:getString()})
+    else
+      msg:getU16()
+    end  
+  end
+
   local time = (os.time() / 1000) * statistics.SECONDS_PER_DAY;
 
   local purchaseStats = {}
@@ -125,7 +152,7 @@ local function parseMarketBrowse(protocol, msg)
     table.insert(offers, readMarketOffer(msg, MarketAction.Sell, var))
   end
 
-  signalcall(Market.onMarketBrowse, offers)
+  signalcall(Market.onMarketBrowse, offers, var)
   return true
 end
 
@@ -204,6 +231,10 @@ end
 
 function MarketProtocol.sendMarketBrowseMyOffers()
   MarketProtocol.sendMarketBrowse(MarketRequest.MyOffers)
+end
+
+function MarketProtocol.sendMarketBrowseMyHistory()
+  MarketProtocol.sendMarketBrowse(MarketRequest.MyHistory)
 end
 
 function MarketProtocol.sendMarketCreateOffer(type, spriteId, amount, price, anonymous)

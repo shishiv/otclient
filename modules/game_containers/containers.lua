@@ -1,11 +1,14 @@
-function init()
-  g_ui.importStyle('container')
+local gameStart = 0
 
+function init()
   connect(Container, { onOpen = onContainerOpen,
                        onClose = onContainerClose,
                        onSizeChange = onContainerChangeSize,
                        onUpdateItem = onContainerUpdateItem })
-  connect(Game, { onGameEnd = clean() })
+  connect(g_game, {
+    onGameStart = markStart,
+    onGameEnd = clean
+  })
 
   reloadContainers()
 end
@@ -15,7 +18,10 @@ function terminate()
                           onClose = onContainerClose,
                           onSizeChange = onContainerChangeSize,
                           onUpdateItem = onContainerUpdateItem })
-  disconnect(Game, { onGameEnd = clean() })
+  disconnect(g_game, { 
+    onGameStart = markStart,
+    onGameEnd = clean
+  })
 end
 
 function reloadContainers()
@@ -29,6 +35,10 @@ function clean()
   for containerid,container in pairs(g_game.getContainers()) do
     destroy(container)
   end
+end
+
+function markStart()
+  gameStart = g_clock.millis()
 end
 
 function destroy(container)
@@ -50,10 +60,18 @@ function refreshContainerItems(container)
   end
 end
 
-function toggleContainerPages(containerWindow, pages)
-  containerWindow:getChildById('miniwindowScrollBar'):setMarginTop(pages and 42 or 22)
-  containerWindow:getChildById('contentsPanel'):setMarginTop(pages and 42 or 22)
-  containerWindow:getChildById('pagePanel'):setVisible(pages)
+function toggleContainerPages(containerWindow, hasPages)
+  if hasPages == containerWindow.pagePanel:isOn() then
+    return
+  end
+  containerWindow.pagePanel:setOn(hasPages)
+  if hasPages then
+    containerWindow.miniwindowScrollBar:setMarginTop(containerWindow.miniwindowScrollBar:getMarginTop() + containerWindow.pagePanel:getHeight())
+    containerWindow.contentsPanel:setMarginTop(containerWindow.contentsPanel:getMarginTop() + containerWindow.pagePanel:getHeight())  
+  else  
+    containerWindow.miniwindowScrollBar:setMarginTop(containerWindow.miniwindowScrollBar:getMarginTop() - containerWindow.pagePanel:getHeight())
+    containerWindow.contentsPanel:setMarginTop(containerWindow.contentsPanel:getMarginTop() - containerWindow.pagePanel:getHeight())
+  end
 end
 
 function refreshContainerPages(container)
@@ -76,6 +94,18 @@ function refreshContainerPages(container)
     nextPageButton:setEnabled(true)
     nextPageButton.onClick = function() g_game.seekInContainer(container:getId(), container:getFirstIndex() + container:getCapacity()) end
   end
+  
+  local pagePanel = container.window:recursiveGetChildById('pagePanel')
+  if pagePanel then
+    pagePanel.onMouseWheel = function(widget, mousePos, mouseWheel)
+      if pages == 1 then return end
+      if mouseWheel == MouseWheelUp then
+        return prevPageButton.onClick()
+      else
+        return nextPageButton.onClick()
+      end
+    end
+  end
 end
 
 function onContainerOpen(container, previousContainer)
@@ -85,14 +115,51 @@ function onContainerOpen(container, previousContainer)
     previousContainer.window = nil
     previousContainer.itemsPanel = nil
   else
-    containerWindow = g_ui.createWidget('ContainerWindow', modules.game_interface.getRightPanel())
+    containerWindow = g_ui.createWidget('ContainerWindow', modules.game_interface.getContainerPanel())
+
+    -- white border flash effect
+    containerWindow:setBorderWidth(2)
+    containerWindow:setBorderColor("#FFFFFF")
+    scheduleEvent(function() 
+      if containerWindow then
+        containerWindow:setBorderWidth(0)
+      end
+    end, 300)
   end
+  
   containerWindow:setId('container' .. container:getId())
+  if gameStart + 1000 < g_clock.millis() then
+    containerWindow:clearSettings()
+  end
+  
   local containerPanel = containerWindow:getChildById('contentsPanel')
   local containerItemWidget = containerWindow:getChildById('containerItemWidget')
   containerWindow.onClose = function()
     g_game.close(container)
     containerWindow:hide()
+  end
+  containerWindow.onDrop = function(container, widget, mousePos)
+    if containerPanel:getChildByPos(mousePos) then
+      return false
+    end
+    local child = containerPanel:getChildByIndex(-1)
+    if child then
+      child:onDrop(widget, mousePos, true)        
+    end
+  end
+  
+  containerWindow.onMouseRelease = function(widget, mousePos, mouseButton)
+    if mouseButton == MouseButton4 then
+      if container:hasParent() then
+        return g_game.openParent(container)
+      end
+    elseif mouseButton == MouseButton5 then
+      for i, item in ipairs(container:getItems()) do
+        if item:isContainer() then
+          return g_game.open(item, container)
+        end
+      end
+    end
   end
 
   -- this disables scrollbar auto hiding
@@ -110,7 +177,6 @@ function onContainerOpen(container, previousContainer)
   containerWindow:setText(name)
 
   containerItemWidget:setItem(container:getContainerItem())
-  containerItemWidget:setPhantom(true)
 
   containerPanel:destroyChildren()
   for slot=0,container:getCapacity()-1 do
@@ -135,6 +201,13 @@ function onContainerOpen(container, previousContainer)
   local cellSize = layout:getCellSize()
   containerWindow:setContentMinimumHeight(cellSize.height)
   containerWindow:setContentMaximumHeight(cellSize.height*layout:getNumLines())
+
+  if container:hasPages() then
+    local height = containerWindow.miniwindowScrollBar:getMarginTop() + containerWindow.pagePanel:getHeight()+17
+    if containerWindow:getHeight() < height then
+      containerWindow:setHeight(height)
+    end
+  end
 
   if not previousContainer then
     local filledLines = math.max(math.ceil(container:getItemsCount() / layout:getNumColumns()), 1)

@@ -100,7 +100,7 @@ GameItemAnimationPhase = 15
 GameMagicEffectU16 = 16
 GamePlayerMarket = 17
 GameSpritesU32 = 18
-GameChargeableItems = 19
+GameTileAddThingWithStackpos = 19
 GameOfflineTrainingTime = 20
 GamePurseSlot = 21
 GameFormatCreatureName = 22
@@ -125,13 +125,16 @@ GameLooktypeU16 = 42
 GamePlayerStamina = 43
 GamePlayerAddons = 44
 GameMessageStatements = 45
-GameMesssageLevel = 46
+GameMessageLevel = 46
 GameNewFluids = 47
 GamePlayerStateU16 = 48
 GameNewOutfitProtocol = 49
 GamePVPMode = 50
 GameWritableDate = 51
 GameAdditionalVipInfo = 52
+GameBaseSkillU16 = 53
+GameCreatureIcons = 54
+GameHideNpcNames = 55
 GameSpritesAlphaChannel = 56
 GamePremiumExpiration = 57
 GameBrowseField = 58
@@ -153,7 +156,66 @@ GameIngameStore = 73
 GameIngameStoreHighlights = 74
 GameIngameStoreServiceType = 75
 GameAdditionalSkills = 76
+GameDistanceEffectU16 = 77
+GamePrey = 78
+GameDoubleMagicLevel = 79
 
+GameExtendedOpcode = 80
+GameMinimapLimitedToSingleFloor = 81
+GameSendWorldName = 82
+
+GameDoubleLevel = 83
+GameDoubleSoul = 84
+GameDoublePlayerGoodsMoney = 85
+GameCreatureWalkthrough = 86 -- add Walkthrough for versions less than 854, unpass = msg->getU8(); in protocolgameparse.cpp
+GameDoubleTradeMoney = 87
+GameSequencedPackets = 88
+GameTibia12Protocol = 89
+
+GameNewWalking = 90
+GameSlowerManualWalking = 91
+GameItemTooltip = 93
+
+GameBot = 95
+GameBiggerMapCache = 96
+GameForceLight = 97
+GameNoDebug = 98
+GameBotProtection = 99
+
+GameCreatureDirectionPassable = 100
+GameFasterAnimations = 101
+GameCenteredOutfits = 102
+GameSendIdentifiers = 103
+GameWingsAndAura = 104
+GamePlayerStateU32 = 105
+GameOutfitShaders = 106
+GameForceAllowItemHotkeys = 107
+GameCountU16 = 108
+GameDrawAuraOnTop = 109
+
+GamePacketSizeU32 = 110
+GamePacketCompression = 111
+
+GameOldInformationBar = 112
+GameHealthInfoBackground = 113
+GameWingOffset = 114
+GameAuraFrontAndBack = 115 -- To use that: First layer is bottom/back, second (blend layer) is top/front
+
+GameMapDrawGroundFirst = 116 -- useful for big auras & wings
+GameMapIgnoreCorpseCorrection = 117
+GameDontCacheFiles = 118 -- doesn't work with encryption and compression
+GameBigAurasCenter = 119 -- Automatic negative offset for aura bigger than 32x32
+GameNewUpdateWalk = 120 -- Walk update rate dependant on FPS
+GameNewCreatureStacking = 121 -- Ignore MAX_THINGS limit while adding to tile
+GameCreaturesMana = 122 -- get mana from server for creatures other than Player
+GameQuickLootFlags = 123 -- enables quick loot feature for all protocols
+GameDontMergeAnimatedText = 124
+GameMissionId = 125
+GameItemCustomAttributes = 126
+GameAnimatedTextCustomFont = 127
+
+LastGameFeature = 130
+        
 TextColors = {
   red       = '#f55e5e', --'#c83200'
   orange    = '#f36500', --'#c87832'

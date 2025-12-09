@@ -10,6 +10,7 @@ LoginServerUpdateNeeded = 30
 LoginServerSessionKey = 40
 LoginServerCharacterList = 100
 LoginServerExtendedCharacterList = 101
+LoginServerProxyList = 110
 
 -- Since 10.76
 LoginServerRetry = 10
@@ -38,8 +39,11 @@ function ProtocolLogin:sendLoginPacket()
   local msg = OutputMessage.create()
   msg:addU8(ClientOpcodes.ClientEnterAccount)
   msg:addU16(g_game.getOs())
-
-  msg:addU16(g_game.getProtocolVersion())
+  if g_game.getCustomProtocolVersion() > 0 then
+    msg:addU16(g_game.getCustomProtocolVersion())  
+  else
+    msg:addU16(g_game.getProtocolVersion())
+  end
 
   if g_game.getFeature(GameClientVersion) then
     msg:addU32(g_game.getClientVersion())
@@ -83,6 +87,13 @@ function ProtocolLogin:sendLoginPacket()
   if self.getLoginExtendedData then
     local data = self:getLoginExtendedData()
     msg:addString(data)
+  else
+    msg:addString("OTCv8")
+    local version = g_app.getVersion():split(" ")[1]:gsub("%.", "")
+    if version:len() == 2 then
+      version = version .. "0" 
+    end
+    msg:addU16(tonumber(version))
   end
 
   local paddingBytes = g_crypt.rsaGetSize() - (msg:getMessageSize() - offset)
@@ -99,7 +110,7 @@ function ProtocolLogin:sendLoginPacket()
     msg:addU8(1) --unknown
     msg:addU8(1) --unknown
 
-    if g_game.getClientVersion() >= 1072 then
+    if g_game.getProtocolVersion() >= 1072 then
       msg:addString(string.format('%s %s', g_graphics.getVendor(), g_graphics.getRenderer()))
     else
       msg:addString(g_graphics.getRenderer())
@@ -126,6 +137,10 @@ function ProtocolLogin:sendLoginPacket()
     end
 
     msg:encryptRsa()
+  end
+
+  if g_game.getFeature(GamePacketSizeU32) then
+    self:enableBigPackets()
   end
 
   if g_game.getFeature(GameProtocolChecksum) then
@@ -168,9 +183,19 @@ function ProtocolLogin:onRecv(msg)
       self:parseExtendedCharacterList(msg)
     elseif opcode == LoginServerUpdate then
       local signature = msg:getString()
-      signalcall(self.onUpdateNeeded, self, signature)
+      signalcall(self.onUpdateNeeded, self, signature)      
     elseif opcode == LoginServerSessionKey then
       self:parseSessionKey(msg)
+    elseif opcode == LoginServerProxyList then
+      local proxies = {}
+      local proxiesCount = msg:getU8()
+      for i=1, proxiesCount do
+        local host = msg:getString()
+        local port = msg:getU16()
+        local priority = msg:getU16()        
+        table.insert(proxies, {host=host, port=port, priority=priority})
+      end      
+      signalcall(self.onProxyList, self, proxies)
     else
       self:parseOpcode(opcode, msg)
     end
@@ -196,7 +221,7 @@ end
 function ProtocolLogin:parseCharacterList(msg)
   local characters = {}
 
-  if g_game.getClientVersion() > 1010 then
+  if g_game.getProtocolVersion() > 1010 then
     local worlds = {}
 
     local worldsCount = msg:getU8()

@@ -62,6 +62,20 @@ function UIMiniWindowContainer:fitAll(noRemoveChild)
     end
   end
 
+  -- try to remove save widget, not forceOpen
+  for i=#children,1,-1 do
+    if sumHeight <= selfHeight then
+      break
+    end
+
+    local child = children[i]
+    if child ~= noRemoveChild and child:isVisible() and not child.forceOpen then
+      local childHeight = child:getHeight()
+      sumHeight = sumHeight - childHeight
+      table.insert(removeChildren, child)
+    end
+  end
+
   -- try to remove save widget
   for i=#children,1,-1 do
     if sumHeight <= selfHeight then
@@ -70,7 +84,7 @@ function UIMiniWindowContainer:fitAll(noRemoveChild)
 
     local child = children[i]
     if child ~= noRemoveChild and child:isVisible() then
-      local childHeight = child:getHeight()
+      local childHeight = child:getHeight() - 50
       sumHeight = sumHeight - childHeight
       table.insert(removeChildren, child)
     end
@@ -78,7 +92,11 @@ function UIMiniWindowContainer:fitAll(noRemoveChild)
 
   -- close widgets
   for i=1,#removeChildren do
-    removeChildren[i]:close()
+    if removeChildren[i].forceOpen then
+      removeChildren[i]:minimize(true)
+    else
+      removeChildren[i]:close()
+    end
   end
 end
 
@@ -103,6 +121,18 @@ function UIMiniWindowContainer:onDrop(widget, mousePos)
     self:fitAll(widget)
     return true
   end
+end
+
+function UIMiniWindowContainer:moveTo(newPanel)
+  if not newPanel or newPanel == self then
+    return
+  end
+  local children = self:getChildByIndex(1)
+  while children do
+    newPanel:addChild(children)
+    children = self:getChildByIndex(1)
+  end
+  newPanel:fitAll()
 end
 
 function UIMiniWindowContainer:swapInsert(widget, index)
@@ -138,7 +168,15 @@ function UIMiniWindowContainer:scheduleInsert(widget, index)
         local placed = false
         for nIndex,nWidget in pairs(self.scheduledWidgets) do
           if nIndex - 1 <= self:getChildCount() then
-            self:insertChild(nIndex, nWidget)
+            local oldParent = nWidget:getParent()
+            if oldParent ~= self then
+              if oldParent then
+                oldParent:removeChild(nWidget)
+              end
+              self:insertChild(nIndex, nWidget)
+            else
+              self:moveChildToIndex(nWidget, nIndex)
+            end
             self.scheduledWidgets[nIndex] = nil
             placed = true
             break
@@ -146,7 +184,6 @@ function UIMiniWindowContainer:scheduleInsert(widget, index)
         end
         if not placed then break end
       end
-
     end
   end
 end
@@ -157,10 +194,20 @@ function UIMiniWindowContainer:order()
     if not children[i].miniLoaded then return end
   end
 
+  table.sort(children, function(a, b)
+    local indexA = a.miniIndex or a.autoOpen or 999
+    local indexB = b.miniIndex or b.autoOpen or 999
+    return indexA < indexB
+  end)
+
+  self:reorderChildren(children)
+  local ignoreIndex = 0
   for i=1,#children do
-    if children[i].miniIndex then
-      self:swapInsert(children[i], children[i].miniIndex)
-    end
+    if children[i].save then
+      children[i].miniIndex = i - ignoreIndex
+    else
+      ignoreIndex = ignoreIndex + 1
+    end      
   end
 end
 
@@ -174,4 +221,8 @@ function UIMiniWindowContainer:saveChildren()
       ignoreIndex = ignoreIndex + 1
     end
   end
+end
+
+function UIMiniWindowContainer:onGeometryChange()
+  self:fitAll()
 end

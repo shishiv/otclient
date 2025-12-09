@@ -1,84 +1,98 @@
-[![Build Status](https://github.com/edubart/otclient/actions/workflows/build-vcpkg.yml/badge.svg)](https://github.com/edubart/otclient/actions/workflows/build-vcpkg.yml) [![Join the chat at https://gitter.im/edubart/otclient](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/edubart/otclient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Open Source Helpers](https://www.codetriage.com/edubart/otclient/badges/users.svg)](https://www.codetriage.com/edubart/otclient)
+# OTClientV8
 
-### What is otclient?
+OTClientV8 is highly optimized, cross-platform tile based 2d game engine built with c++17, lua, physfs, OpenGL ES 2.0 and OpenAL.
+It has been created as alternative client for game called [Tibia](https://tibia.com/), but now it's much more functional and powerful.
+It works well even on 12 years old computers. In 2023 it reached 1 mln unique installations, including 250k android installations.
 
-Otclient is an alternative Tibia client for usage with otserv. It aims to be complete and flexible,
-for that it uses LUA scripting for all game interface functionality and configurations files with a syntax
-similar to CSS for the client interface design. Otclient works with a modular system, this means
-that each functionality is a separated module, giving the possibility to users modify and customize
-anything easily. Users can also create new mods and extend game interface for their own purposes.
-Otclient is written in C++11 and heavily scripted in lua.
+Supported platforms:
+- Windows (min. Windows 7, requires https://aka.ms/vs/16/release/vc_redist.x86.exe)
+- Android (min. 5.0)
+- Linux
+- Mac Os (requires https://www.xquartz.org/)
 
-For a server to connect to, you can build your own with the [forgottenserver](https://github.com/otland/forgottenserver)
-or connect to one listed on [otservlist](https://otservlist.org/).
+### Forum: [https://otland.net/forums/otclient.494/](https://otland.net/forums/otclient.494/)
+### Discord: [https://discord.gg/feySup6](https://discord.gg/feySup6)
+### Website: [http://otclient.ovh](http://otclient.ovh)
+### Wiki: [https://github.com/OTCv8/otclientv8/wiki](https://github.com/OTCv8/otclientv8/wiki)
 
-### Where do I download?
+## Version for developers (sources)
 
-Compiled for Windows can be found here (but can be outdated):
-* [Windows Builds](http://otland.net/threads/otclient-builds-windows.217977/)
+In this repository, you can find clean, always up-to-date, ready to use version of OTClientv8. Most commits starting from version 3.0 are automated using GitHub Actions. If you want to help with development, please visit repository for developers - https://github.com/OTCv8/otcv8-dev
 
-**NOTE:** You will need to download spr/dat files on your own and place them in `data/things/VERSION/` (i.e: `data/things/1098/Tibia.spr`)
+## FEATURES
+- Rewritten and optimized rendering (60 fps on 11 years old computer)
+- Better DirectX9 and DirectX11 support
+- Adaptive rendering (automated graphics optimizations)
+- Rewritten and optimized light rendering
+- Rewritten path finding and auto walking
+- Rewritten walking system with animations
+- HTTP/HTTPS lua API with JSON support
+- WebSocket lua API
+- Auto updater with failsafe (recovery) mode
+- New filesystem
+- File encryption and compression
+- Automatic diagnostic system
+- Refreshed interface
+- New crash and error handler
+- New HTTP login protocol
+- Ingame shop
+- Updated hotkey manager
+- Updated and optimized battle list
+- Crosshair, floor fading, extra health/mana bars and panels
+- Much more client options
+- Removed a lot of useless and outdated things
+- Advanced bot
+- Linux version
+- Full tibia 11.00 support
+- Layouts
+- New login server (with ingame account and character creation)
+- Support for proxies to lower latency and protect against DDoS
 
-### Features
+### And hundreds of smaller features, optimizations and bug fixes!
+### Check out [Wiki page](https://github.com/OTCv8/otclientv8/wiki) to see how activate and use new features
 
-Beyond of it's flexibility with scripts, otclient comes with tons of other features that make possible
-the creation of new client side stuff in otserv that was not possible before. These include,
-sound system, graphics effects with shaders, modules/addons system, animated textures,
-styleable user interface, transparency, multi language, in game lua terminal, an OpenGL 1.1/2.0 ES engine that make possible
-to port to mobile platforms. Otclient is also flexible enough to
-create tibia tools like map editors just using scripts, because it wasn't designed to be just a
-client, instead otclient was designed to be a combination of a framework and tibia APIs.
+### Old tools, like updater and tutorials has been moved to: [OTCv8/otcv8-tools](https://github.com/OTCv8/otcv8-tools)
+### There's github repo of tfs 1.3 with otclientv8 features: [OTCv8/otclientv8-tfs](https://github.com/OTCv8/forgottenserver)
 
-### Compiling
+## Quick Start for players
 
-In short, if you need to compile OTClient, follow these tutorials:
-* [Compiling on Windows](https://github.com/edubart/otclient/wiki/Compiling-on-Windows)
-* [Compiling on Linux](https://github.com/edubart/otclient/wiki/Compiling-on-Linux)
-* [Compiling on OS X](https://github.com/edubart/otclient/wiki/Compiling-on-Mac-OS-X)
+Download whole repository and run one of binary file. 
 
-### Build and run with Docker
+## Quick Start for server owners
 
-To build the image:
+Open `init.lua` and edit:
 
-```sh
-docker build -t edubart/otclient .
+```
+-- CONFIG
+APP_NAME = "otclientv8" -- important, change it, it's name for config dir and files in appdata
+APP_VERSION = 1337      -- client version for updater and login to indentify outdated client
+DEFAULT_LAYOUT = "retro"
+
+-- If you don't use updater or other service, set it to updater = ""
+Services = {
+  website = "http://otclient.ovh", -- currently not used
+  updater = "http://otclient.ovh/api/updater.php",
+  news = "http://otclient.ovh/api/news.php",
+  stats = "",
+  crash = "http://otclient.ovh/api/crash.php",
+  feedback = "http://otclient.ovh/api/feedback.php"
+}
+
+-- Servers accept http login url or ip:port:version
+Servers = {
+  OTClientV8 = "http://otclient.ovh/api/login.php",
+  OTClientV8proxy = "http://otclient.ovh/api/login.php?proxy=1",
+  OTClientV8classic = "otclient.ovh:7171:1099",
+  OTClientV8cwithfeatures = "otclient.ovh:7171:1099:25:30:80:90",
+}
+ALLOW_CUSTOM_SERVERS = true -- if true it will show option ANOTHER on server list
+-- CONFIG END
 ```
 
-To run the built image:
+Also remember to add your sprite and data file to data/things
 
-```sh
-# Disable access control for the X server.
-xhost +
+That's it, you're ready to use OTClientV8.
 
-# Run the container image with the required bindings to the host devices and volumes.
-docker run -it --rm \
-  --env DISPLAY \
-  --volume /tmp/.X11-unix:/tmp/.X11-unix \
-  --device /dev/dri \
-  --device /dev/snd edubart/otclient /bin/bash
+DirectX version requires 3 dlls: libEGL.dll libGLESv2.dll d3dcompiler_47.dll
 
-# Enable access control for the X server.
-xhost -
-```
-
-### Need help?
-
-Try to ask questions in [otland](http://otland.net/f494/), now we have a board for the project there,
-or talk with us at the gitter chat.
-
-### Bugs
-
-Have found a bug? Please create an issue in our [bug tracker](https://github.com/edubart/otclient/issues)
-
-### Contributing
-
-We encourage you to contribute to otclient! You can make pull requests of any improvement in our github page, alternatively, see [Contributing Wiki Page](https://github.com/edubart/otclient/wiki/Contributing).
-
-### Contact
-
-Talk directly with us at the gitter chat [![Join the chat at https://gitter.im/edubart/otclient](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/edubart/otclient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge).
-
-### License
-
-Otclient is made available under the MIT License, thus this means that you are free
-to do whatever you want, commercial, non-commercial, closed or open.
+If it can't start (missing dlls) then user need to install visual studio 2019 redistributable x86: https://aka.ms/vs/16/release/vc_redist.x86.exe

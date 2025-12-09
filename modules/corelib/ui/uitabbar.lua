@@ -77,13 +77,7 @@ function UITabBar:removeTab(tab)
   local index = table.find(self.tabs, tab)
   if index == nil then return end
   if self.currentTab == tab then
-    if #self.tabs == 1 then
-      self.currentTab = nil
-    elseif index == #self.tabs then
-      self:selectPrevTab()
-    else
-      self:selectNextTab()
-    end
+    self:selectPrevTab()
   end
   table.remove(self.tabs, index)
   tab:destroy()
@@ -160,4 +154,10 @@ end
 
 function UITabBar:getTabsPanel()
   return table.collect(self.tabs, function(_,tab) return tab.tabPanel end)
+end
+
+function UITabBar:clearTabs()
+  while #self.tabs > 0 do
+    self:removeTab(self.tabs[#self.tabs])
+  end
 end
